@@ -1,0 +1,19 @@
+# Jenkins
+*.log
+*.tmp
+*.swp
+*.bak
+
+# Build
+target/
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
