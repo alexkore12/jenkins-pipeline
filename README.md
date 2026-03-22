@@ -2,15 +2,13 @@
 
 Pipeline de CI/CD completo con Jenkins para aplicaciones containerizadas con seguridad integrada.
 
-## ⚠️ Aviso de Seguridad
+## ⚠️ Aviso de Seguridad - Trivy
 
-**Marzo 2026:** Se ha detectado actividad maliciosa en la supply chain de Trivy.
+**Marzo 2026:** Trivy comprometido por supply chain attack (2° ataque).
 
-**Recomendaciones:**
-1. Verificar integridad de imágenes de Trivy
-2. Usar firmas digitales para binarios
-3. Mantener Trivy actualizado
-4. Implementar escaneo en múltiples etapas
+**Este pipeline ahora usa Grype** (alternativa a Trivy):
+- Grype: Escaneo de vulnerabilidades
+- Checkov: Escaneo de infraestructura como código
 
 ## 📋 Descripción
 
@@ -21,7 +19,7 @@ Pipeline declarativo Jenkins que automatiza el ciclo de vida completo:
 
 - ✅ **Multi-stage Pipeline** - Build, Test, Security Scan, Deploy
 - ✅ **Docker Integration** - Build y push de imágenes
-- ✅ **Security Scanning** - Trivy vulnerability scanner
+- ✅ **Security Scanning** - Grype vulnerability scanner (replaced Trivy)
 - ✅ **Kubernetes** - Despliegue a staging y producción
 - ✅ **Branch-based** - Estrategias para develop y main
 - ✅ **Notifications** - Alertas por email y Slack
