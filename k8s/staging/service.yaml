@@ -1,0 +1,77 @@
+---
+# Kubernetes Service - Staging
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-staging
+  namespace: staging
+  labels:
+    app: app
+    env: staging
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: app
+    env: staging
+---
+# Ingress - Staging
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-staging
+  namespace: staging
+  labels:
+    app: app
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  tls:
+    - hosts:
+        - staging.example.com
+      secretName: app-staging-tls
+  rules:
+    - host: staging.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app-staging
+                port:
+                  number: 80
+---
+# Horizontal Pod Autoscaler - Staging
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: app-staging
+  namespace: staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: app-staging
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

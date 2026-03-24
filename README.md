@@ -81,25 +81,29 @@ make help
 
 ```
 jenkins-pipeline/
-├── Jenkinsfile                    # Pipeline principal
+├── Jenkinsfile                    # Pipeline declarativo Jenkins
 ├── Dockerfile                     # Imagen de la app
 ├── docker-compose.yml             # Desarrollo local
 ├── Makefile                       # Comandos útiles
-├── deploy/
-│   ├── staging.yaml               # Staging K8s
-│   └── production.yaml            # Production K8s
-├── scripts/
-│   ├── notify.sh                  # Notificaciones
-│   └── rollback.sh                # Rollback script
+├── k8s/                           # Kubernetes manifests
+│   ├── staging/
+│   │   ├── deployment.yaml        # Staging deployment + probes
+│   │   └── service.yaml           # Staging service + ingress + HPA
+│   └── production/
+│       ├── deployment.yaml        # Production deployment + topology
+│       └── service.yaml           # Production service + ingress + HPA + PDB
 ├── .github/
+│   ├── CODEOWNERS                 # Code owners
+│   ├── dependabot.yml             # Dependency updates
 │   └── workflows/
-│       └── github-actions.yml     # GitHub Actions (backup)
+│       └── ci.yml                 # GitHub Actions CI/CD completo
 ├── .env.example
 ├── .grype.yaml                   # Grype config
-├── SECURITY.md
+├── QUICKSTART.md
 ├── PIPELINE_GUIDE.md
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
+├── SECURITY.md
 ├── LICENSE
 └── README.md
 ```
@@ -166,12 +170,27 @@ export SLACK_WEBHOOK=https://hooks.slack.com/...
 export ALERT_THRESHOLD=CRITICAL
 ```
 
-## 📊 GitHub Actions (Backup)
+## 📊 GitHub Actions (CI/CD Alternativo)
 
-Workflow alternativo en `.github/workflows/github-actions.yml`:
+Workflow completo en `.github/workflows/ci.yml` con los siguientes jobs:
 
-- Trigger: push a develop → staging, push a main → production
-- Ejecuta: lint, test, build, scan, deploy
+| Job | Trigger | Descripción |
+|-----|---------|-------------|
+| `quality` | push/PR | Validación Dockerfile, secrets, YAML |
+| `build` | push/PR | Docker build + Grype + Checkov |
+| `security` | push/PR | SBOM generation con Grype |
+| `deploy-staging` | push to `develop` | Deploy automático a staging |
+| `deploy-production` | push to `main` | Deploy con approval manual |
+| `release` | push to `main` | Generación de release notes |
+
+El workflow incluye:
+- 📦 Multi-arch build con Docker Buildx
+- 🔍 Vulnerability scanning con Grype
+- 🏗️ IaC scanning con Checkov
+- 📋 SARIF output para GitHub Security tab
+- 🐳 Push a GHCR (GitHub Container Registry)
+- 🚀 Deployment a Kubernetes (configurable)
+- 📝 Automated releases con changelog
 
 ## 📖 Guía Completa
 
