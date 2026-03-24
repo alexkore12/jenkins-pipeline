@@ -1,0 +1,27 @@
+# Grype vulnerability scanner configuration for jenkins-pipeline
+# https://github.com/anchore/grype
+
+name: jenkins-pipeline
+version: 1.0.0
+
+# DB configuration
+db:
+  check-for-app-update: true
+  auto-update: false
+
+# Output configuration
+output:
+  format: table
+
+# Severity filter
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+# Fail on match
+fail-on: medium
+
+# Environment
+env:
+  - PULLED_POLICY=*

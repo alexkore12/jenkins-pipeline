@@ -92,18 +92,26 @@ jenkins-pipeline/
 │   └── production/
 │       ├── deployment.yaml        # Production deployment + topology
 │       └── service.yaml           # Production service + ingress + HPA + PDB
+├── deploy.sh                      # Script de despliegue
+├── monitor.sh                     # Script de monitoreo
+├── setup.sh                       # Script de inicialización
+├── health_check.py               # Verificación de salud
 ├── .github/
 │   ├── CODEOWNERS                 # Code owners
 │   ├── dependabot.yml             # Dependency updates
-│   └── workflows/
-│       └── ci.yml                 # GitHub Actions CI/CD completo
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   └── feature_request.md
+│   └── PULL_REQUEST_TEMPLATE.md
 ├── .env.example
 ├── .grype.yaml                   # Grype config
-├── QUICKSTART.md
-├── PIPELINE_GUIDE.md
+├── .dockerignore
+├── SECURITY.md
+├── QUICKSTART.md                  # Guía de inicio rápido
+├── PIPELINE_GUIDE.md             # Guía completa del pipeline
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
-├── SECURITY.md
+├── CODEOWNERS
 ├── LICENSE
 └── README.md
 ```
