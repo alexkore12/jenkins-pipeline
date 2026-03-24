@@ -1,293 +1,193 @@
 # Jenkins Pipeline
 
-Pipeline de CI/CD completo con Jenkins para aplicaciones containerizadas con seguridad integrada.
+> Pipeline de CI/CD completo con Jenkins para aplicaciones containerizadas con seguridad integrada y despliegues Kubernetes.
 
-> ⚠️ **Marzo 2026**: Trivy comprometido por supply chain attack (2° ataque).
-> Este pipeline ahora usa **Grype** (alternativa a Trivy) y **Checkov**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Jenkins](https://img.shields.io/badge/Jenkins-2.x-red.svg)](Jenkinsfile)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-blue.svg)](deploy/)
+[![Security: Grype](https://img.shields.io/badge/Security-Grype-orange.svg)](.grype.yaml)
 
-## Características
+> ⚠️ **Marzo 2026**: Trivy comprometido por supply chain attack.
+> Este pipeline usa **Grype** y **Checkov** como alternativas seguras.
 
-- ✅ **Multi-stage Pipeline** - Build, Test, Security Scan, Deploy
-- ✅ **Docker Integration** - Build y push de imágenes
-- ✅ **Security Scanning** - Grype vulnerability scanner + Checkov for IaC
-- ✅ **Kubernetes** - Despliegue a staging y producción
-- ✅ **Branch-based** - Estrategias para develop y main
-- ✅ **Notifications** - Alertas por email y Slack
-- ✅ **Supply Chain** - Verificación de integridad
+## 📋 Descripción
 
-## Alternativas a Trivy
+Pipeline declarativo Jenkins que automatiza el ciclo completo de CI/CD: build, test, security scanning, y deployment a Kubernetes con estrategias branch-based y quality gates.
 
-Este pipeline usa alternativas seguras:
+## ✨ Características
 
-- **Grype**: Escaneo de vulnerabilidades de contenedores
-- **Checkov**: Escaneo de infraestructura como código (Terraform, K8s, Docker)
+- ✅ **Multi-stage Pipeline** - Build → Test → Security → Deploy
+- ✅ **Docker Integration** - Build y push automatizado
+- ✅ **Security Scanning** - Grype + Checkov
+- ✅ **Kubernetes Deploy** - Staging y Production
+- ✅ **Branch-based** - develop → staging, main → production
+- ✅ **Quality Gates** - Validación de coverage y vulnerabilidades
+- ✅ **Notifications** - Email y Slack
+- ✅ **Supply Chain Security** - Verificación de integridad
+- ✅ **Artifact Management** - Versionado y rollback
 
-## Estructura
+## 🚀 Instalación
+
+### Prerequisites
+
+- Jenkins 2.x con plugins:
+  - Pipeline
+  - Docker Pipeline
+  - Kubernetes CLI
+  - Git
+  - JUnit
+  - Email Extension
+  
+- Docker 20.x+
+- kubectl configurado
+- Grype y Checkov instalados
+
+### Configuración
+
+```bash
+# Clonar repositorio
+git clone https://github.com/alexkore12/jenkins-pipeline.git
+cd jenkins-pipeline
+
+# Verificar herramientas
+make verify
+
+# Help
+make help
+```
+
+### Jenkins Setup
+
+1. **Nueva Pipeline:**
+   - Dashboard → New Item → Pipeline
+   - Nombre: `app-pipeline`
+   - Pipeline script from SCM
+
+2. **Configurar SCM:**
+   ```
+   Repository: https://github.com/alexkore12/jenkins-pipeline.git
+   Branch: */main
+   Script Path: Jenkinsfile
+   ```
+
+3. **Credenciales requeridas:**
+   - `docker-hub` - Docker Registry
+   - `kubeconfig` - Kubernetes config
+   - `slack-webhook` - Slack notifications
+   - `smtp` - Email notifications
+
+## 📁 Estructura
 
 ```
 jenkins-pipeline/
-├── Jenkinsfile                    # Pipeline declarativo
-├── Dockerfile                     # Imagen de la aplicación
+├── Jenkinsfile                    # Pipeline principal
+├── Dockerfile                     # Imagen de la app
+├── docker-compose.yml             # Desarrollo local
+├── Makefile                       # Comandos útiles
 ├── deploy/
-│   ├── staging.yaml               # Manifiestos K8s staging
-│   └── production.yaml            # Manifiestos K8s production
+│   ├── staging.yaml               # Staging K8s
+│   └── production.yaml            # Production K8s
 ├── scripts/
-│   └── notify.sh                  # Scripts de notificación
-└── .github/
-    └── workflows/
-        └── github-actions.yml     # GitHub Actions (alternativo)
+│   ├── notify.sh                  # Notificaciones
+│   └── rollback.sh                # Rollback script
+├── .github/
+│   └── workflows/
+│       └── github-actions.yml     # GitHub Actions (backup)
+├── .env.example
+├── .grype.yaml                   # Grype config
+├── SECURITY.md
+├── PIPELINE_GUIDE.md
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── LICENSE
+└── README.md
 ```
 
-## Diagrama del Pipeline
+## 🔄 Pipeline Stages
 
 ```
-┌─────────────┐ ┌──────────┐ ┌─────────┐ ┌──────────────┐
-│ Checkout    │──▶│ Build    │──▶│ Test    │──▶│Security Scan │
-└─────────────┘ └──────────┘ └─────────┘ └──────────────┘
-                                                │
-                                                ▼
-┌─────────────┐ ┌─────────────┐ ┌────────────┐ ┌──────────────┐
-│ Notify      │◀──│ Deploy     │◀──│ Approve   │◀──│ Scan         │
-│             │   │Production  │   │           │   │ Staging      │
-└─────────────┘ └─────────────┘ └────────────┘ └──────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                         PIPELINE                                │
+├────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  [Checkout] → [Build] → [Test] → [Security Scan] → [Quality]  │
+│                                                            │    │
+│                                                            ▼    │
+│  [Notify] ← [Deploy Prod] ← [Approval] ← [Deploy Staging]     │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-## Validación Local
+### Stage Details
+
+| Stage | Descripción | Tiempo |
+|-------|-------------|--------|
+| Checkout | Git clone | 5s |
+| Build | Docker build | 2-5min |
+| Test | Unit tests | 1-3min |
+| Security Scan | Grype + Checkov | 30s-2min |
+| Push | Docker push | 1-3min |
+| Deploy Staging | kubectl apply | 1-2min |
+| Approval | Manual approval | Variable |
+| Deploy Production | kubectl apply | 2-3min |
+
+## 🐳 Comandos
 
 ```bash
-# Jenkins CLI
-jenkins-cli validate Jenkinsfile
-
-# Local con Docker
-docker build -t myapp:test .
+make build          # Construir imagen
+make test           # Ejecutar tests
+make scan           # Security scan
+make push           # Push a registry
+make deploy-staging  # Deploy a staging
+make deploy-prod     # Deploy a producción
+make rollback        # Rollback
+make logs           # Ver logs
+make clean          # Limpiar
 ```
 
-## Configuración en Jenkins
+## 🔐 Seguridad
 
-1. Crear nuevo Pipeline job
-2. Apuntar a este repositorio
-3. Configurar GitHub webhook
-4. Instalar plugins necesarios:
+### Alternatives a Trivy
 
-### Plugins Requeridos
+| Herramienta | Uso |
+|-------------|-----|
+| **Grype** | Escaneo de vulnerabilidades de imágenes |
+| **Checkov** | Escaneo de IaC (K8s, Terraform, Docker) |
 
-- Pipeline
-- Docker
-- Kubernetes
-- Email Extension
-- Slack Notification
+### Environment
 
-## Variables de Entorno
-
-| Variable | Descripción | Default |
-|----------|-------------|---------|
-| `DOCKER_REGISTRY` | Registry Docker | docker.io |
-| `IMAGE_NAME` | Nombre de imagen | myapp |
-| `VERSION` | Versión | BUILD_NUMBER |
-| `GRYPE_VERSION` | Versión de Grype | 0.80.0 |
-| `SEVERITY_THRESHOLD` | Umbral | HIGH,CRITICAL |
-
-## Stages del Pipeline
-
-```groovy
-// Checkout
-stage('Checkout') {
-    steps {
-        checkout scm
-    }
-}
-
-// Build
-stage('Build') {
-    steps {
-        sh 'docker build -t ${IMAGE}:${VERSION} .'
-    }
-}
-
-// Test
-stage('Test') {
-    steps {
-        sh 'npm test -- --coverage'
-    }
-}
-
-// Security Scan (Grype)
-stage('Security Scan') {
-    steps {
-        sh 'grype ${IMAGE}:${VERSION} --severity HIGH,CRITICAL'
-    }
-}
-
-// Deploy Staging
-stage('Deploy Staging') {
-    steps {
-        sh 'kubectl apply -f deploy/staging.yaml'
-    }
-}
-
-// Deploy Production
-stage('Deploy Production') {
-    when {
-        branch 'main'
-    }
-    steps {
-        input 'Deploy to Production?'
-        sh 'kubectl apply -f deploy/production.yaml'
-    }
-}
+```bash
+export DOCKER_REGISTRY=docker.io
+export DOCKER_USERNAME=usuario
+export DOCKER_PASSWORD=password
+export KUBECONFIG=/path/to/config
+export SLACK_WEBHOOK=https://hooks.slack.com/...
+export ALERT_THRESHOLD=CRITICAL
 ```
 
-## Dockerfile
+## 📊 GitHub Actions (Backup)
 
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3000
-CMD ["node", "index.js"]
-```
+Workflow alternativo en `.github/workflows/github-actions.yml`:
 
-## Kubernetes Manifests
+- Trigger: push a develop → staging, push a main → production
+- Ejecuta: lint, test, build, scan, deploy
 
-### Staging
+## 📖 Guía Completa
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: myapp-staging
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: myapp
-      env: staging
-  template:
-    spec:
-      containers:
-        - name: myapp
-          image: myapp:staging
-          ports:
-            - containerPort: 3000
-```
+Ver [PIPELINE_GUIDE.md](PIPELINE_GUIDE.md) para:
+- Configuración detallada
+- Troubleshooting
+- Mejores prácticas
+- Examples
 
-### Production
+## 🤝 Contribuir
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: myapp-production
-spec:
-  replicas: 4
-  strategy:
-    type: RollingUpdate
-  selector:
-    matchLabels:
-      app: myapp
-      env: production
-  template:
-    spec:
-      containers:
-        - name: myapp
-          image: myapp:latest
-          ports:
-            - containerPort: 3000
-          resources:
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-```
+1. Fork → Branch → Commit → PR
+2. Tests deben pasar
+3. Security scan limpio
+4. Documentación actualizada
 
-## Notificaciones
+## 📄 Licencia
 
-### Email
-
-```groovy
-post {
-    failure {
-        emailext subject: "Jenkins: ${currentBuild.result}",
-        body: "Pipeline failed: ${env.BUILD_URL}",
-        to: "team@example.com"
-    }
-    success {
-        emailext subject: "Jenkins: Success",
-        body: "Build successful: ${env.BUILD_URL}",
-        to: "team@example.com"
-    }
-}
-```
-
-### Slack
-
-```groovy
-post {
-    success {
-        slackSend channel: '#deployments',
-        color: 'good',
-        message: "Deployment successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-    }
-}
-```
-
-## Mejores Prácticas de Seguridad
-
-- ❌ No hardcoded secrets - Usar Jenkins credentials
-- ✅ Scan images - Grype en cada build
-- ✅ SBOM - Generar Software Bill of Materials
-- ✅ Sign images - Usar Cosign
-- ✅ Readonly root filesystem - En producción
-- ✅ Run as non-root - En contenedores
-
-## GitHub Actions (Alternativo)
-
-El proyecto también incluye GitHub Actions como alternativa:
-
-```yaml
-name: CI/CD
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        run: docker build -t myapp .
-      - name: Scan
-        uses: anchore/grype-action@v0.17.0
-        with:
-          image: myapp
-      - name: Deploy
-        run: kubectl apply -f deploy/
-```
-
-## Changelog
-
-- ✅ v2.1.0 - GitHub Actions añadido, Grype替换Trivy
-- ✅ v2.0.0 - Multi-branch pipeline
-- ✅ v1.2.0 - Kubernetes deployment
-- ✅ v1.1.0 - Security scanning
-- ✅ v1.0.0 - Basic pipeline
-
-## Licencia
-
-MIT License
-
-## Autor
-
-GitHub: [alexkore12](https://github.com/alexkore12)
-
-Este proyecto fue actualizado por OpenClaw AI Assistant - 2026-03-22
-
-## 🌐 Referencias
-
-- [Documentación de Jenkins](https://www.jenkins.io/doc/)
-- [Grype Vulnerability Scanner](https://github.com/anchore/grype)
-- [Checkov](https://www.checkov.io/)
-- [Kubernetes Docs](https://kubernetes.io/docs/)
+MIT - ver [LICENSE](LICENSE)
